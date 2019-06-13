@@ -19,36 +19,58 @@ func (l *Lexer) NextToken() token.Token {
 	var tok token.Token
 	l.skipWhitespace()
 	switch l.ch {
-	case '=':
-		tok = newToken(token.ASSIGN, l.ch)
-	case ';':
-		tok = newToken(token.SEMICOLON, l.ch)
-	case '(':
-		tok = newToken(token.LPAREN, l.ch)
-	case ')':
-		tok = newToken(token.RPAREN, l.ch)
-	case ',':
-		tok = newToken(token.COMMA, l.ch)
 	case '+':
-		tok = newToken(token.PLUS, l.ch)
+		tok = newToken(token.Plus, l.ch)
+	case '-':
+		tok = newToken(token.Minus, l.ch)
+	case '/':
+		tok = newToken(token.Slash, l.ch)
+	case '*':
+		tok = newToken(token.Asterisk, l.ch)
+	case '<':
+		tok = newToken(token.LessThan, l.ch)
+	case '>':
+		tok = newToken(token.GreaterThan, l.ch)
+	case ';':
+		tok = newToken(token.Semicolon, l.ch)
+	case ',':
+		tok = newToken(token.Comma, l.ch)
+	case '(':
+		tok = newToken(token.LeftParen, l.ch)
+	case ')':
+		tok = newToken(token.RightParen, l.ch)
 	case '{':
-		tok = newToken(token.LBRACE, l.ch)
+		tok = newToken(token.LeftBrace, l.ch)
 	case '}':
-		tok = newToken(token.RBRACE, l.ch)
+		tok = newToken(token.RightBrace, l.ch)
 	case 0:
 		tok.Literal = ""
 		tok.Type = token.EOF
+	case '=':
+		if l.peekChar() == '=' {
+			l.readChar()
+			tok = token.Token{Type: token.Equal, Literal: "=="}
+		} else {
+			tok = newToken(token.Assign, l.ch)
+		}
+	case '!':
+		if l.peekChar() == '=' {
+			l.readChar()
+			tok = token.Token{Type: token.NotEqual, Literal: "!="}
+		} else {
+			tok = newToken(token.Bang, l.ch)
+		}
 	default:
 		if isLetter(l.ch) {
 			tok.Literal = l.readSection(isLetter)
-			tok.Type = token.LookupIdent(tok.Literal)
+			tok.Type = token.LookupIdentifier(tok.Literal)
 			return tok
 		} else if isDigit(l.ch) {
 			tok.Literal = l.readSection(isDigit)
-			tok.Type = token.INT
+			tok.Type = token.Int
 			return tok
 		} else {
-			tok = newToken(token.ILLEGAL, l.ch)
+			tok = newToken(token.Illegal, l.ch)
 		}
 	}
 	l.readChar()
@@ -66,13 +88,16 @@ func newToken(tokenType token.TokenType, ch byte) token.Token {
 }
 
 func (l *Lexer) readChar() {
-	if l.readPosition >= len(l.input) {
-		l.ch = 0
-	} else {
-		l.ch = l.input[l.readPosition]
-	}
+	l.ch = l.peekChar()
 	l.position = l.readPosition
 	l.readPosition++
+}
+
+func (l *Lexer) peekChar() byte {
+	if l.readPosition >= len(l.input) {
+		return 0
+	}
+	return l.input[l.readPosition]
 }
 
 func isLetter(ch byte) bool {
